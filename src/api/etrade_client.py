@@ -3,6 +3,9 @@ from typing import Any
 
 from requests_oauthlib import OAuth1Session
 
+from ..models.account import Account, AccountList
+from ..models.portfolio import PortfolioSnapshot
+
 
 @dataclass(frozen=True)
 class ETradeCredentials:
@@ -39,6 +42,10 @@ class ETradeClient:
         response.raise_for_status()
         return response.json()
 
+    def list_account_models(self) -> list[Account]:
+        """Return normalized account models for application use."""
+        return AccountList.from_etrade_payload(self.list_accounts()).accounts
+
     def get_portfolio(self, account_id_key: str) -> dict[str, Any]:
         response = self._session().get(
             f"{self.BASE_URL}/v1/accounts/{account_id_key}/portfolio",
@@ -52,3 +59,10 @@ class ETradeClient:
         )
         response.raise_for_status()
         return response.json()
+
+    def get_portfolio_snapshot(self, account_id_key: str) -> PortfolioSnapshot:
+        """Return a normalized portfolio snapshot for an account."""
+        return PortfolioSnapshot.from_etrade_payload(
+            self.get_portfolio(account_id_key),
+            account_id_key,
+        )

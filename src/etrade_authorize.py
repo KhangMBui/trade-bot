@@ -1,15 +1,22 @@
 from requests_oauthlib import OAuth1Session
 
-from .api.etrade_client import ETradeClient, ETradeCredentials
+from .api.etrade_client import ETradeCredentials
 from .config import settings
+from .security import token_store
 
 # Production URLs
 REQUEST_TOKEN_URL = "https://api.etrade.com/oauth/request_token"
 AUTHORIZE_URL = "https://us.etrade.com/e/t/etws/authorize"
 ACCESS_TOKEN_URL = "https://api.etrade.com/oauth/access_token"
+ACCESS_TOKEN_RENEW_URL = "https://api.etrade.com/oauth/renew_access_token"
 
 
-def authorize() -> ETradeCredentials:
+def _interactive_authorize() -> ETradeCredentials:
+    """Full OAuth1 dance with a browser + verifier code.
+ 
+    Only runs when there's no usable stored token (first run, or the
+    stored token has hard-expired past the E*TRADE midnight-ET cutoff).
+    """
     consumer_key = settings.PROD_API_KEY
     consumer_secret = settings.PROD_SECRET
     oauth = OAuth1Session(
@@ -36,6 +43,9 @@ def authorize() -> ETradeCredentials:
     )
     access_tokens = oauth.fetch_access_token(ACCESS_TOKEN_URL)
 
+    # Save the token into token store
+    token_store.save_tokens(access_tokens["oauth_token"], access_tokens["oauth_token_secret"])
+
     return ETradeCredentials(
         consumer_key=consumer_key,
         consumer_secret=consumer_secret,
@@ -43,16 +53,37 @@ def authorize() -> ETradeCredentials:
         access_token_secret=access_tokens["oauth_token_secret"],
     )
 
+def _try_renew(credentials: ETradeCredentials) -> bool:
+    """Reactivate a token that went idle after 2 hours of no requests.
+ 
+    Fails (returns False) once the token has crossed midnight US Eastern,
+    at which point a full interactive re-authorization is required.
+    """
+    oauth = OAuth1Session(
+        credentials.consumer_key,
+        client_secret=credentials.consumer_secret,
+        resource_owner_key=credentials.access_token,
+        resource_owner_secret=credentials.access_token_secret,
+    )
+    response = oauth.get(ACCESS_TOKEN_RENEW_URL)
+    return response.ok
 
-def main() -> None:
-    credentials = authorize()
-    client = ETradeClient(credentials)
-    accounts = client.list_accounts()
-    portfolio = client.get_portfolio(settings.ACCOUNT_ID_KEY)
+def get_credentials() -> ETradeCredentials:
+    """Entry point for a normal run: reuse a stored token if there is one."""
+    cached = token_store.load_credentials()
+    if cached is not None:
+        return cached
+    return _interactive_authorize()
 
-    print(f"Accounts response: {accounts}")
-    print(f"Portfolio response: {portfolio}")
-
-
-if __name__ == "__main__":
-    main()
+def recover_from_rejected_token() -> ETradeCredentials:
+    """Call this when a request to E*TRADE fails with 401 / invalid token.
+ 
+    Tries the lightweight renew endpoint first (no browser needed), and
+    only falls back to the full interactive flow if that fails.
+    """
+    cached = token_store.load_credentials()
+    if cached is not None and _try_renew(cached):
+        return cached  # token/secret pair is unchanged, just reactivated
+ 
+    token_store.clear_tokens()
+    return _interactive_authorize()
