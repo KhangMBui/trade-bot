@@ -2,7 +2,6 @@ from decimal import Decimal
 import argparse
 from collections.abc import Callable
 from typing import TypeVar
-
 from requests.exceptions import HTTPError
 
 from .api.account import list_accounts, select_account
@@ -21,6 +20,8 @@ from .services.portfolio_service import (
 )
 from .storage.repositories import PortfolioRepository
 
+from .agent.orchestrator import analyze_current_portfolio
+from .agent.providers.openai_provider import OpenAIProvider
 
 T = TypeVar("T")
 
@@ -193,7 +194,30 @@ def run_analyze_portfolio() -> None:
   else:
     print("Portfolio risk flags: none")
 
+def run_agent_portfolio_analysis() -> None:
+  """Generate an AI explanation of the latest portfolio analysis."""
 
+  provider = OpenAIProvider()
+  answer = analyze_current_portfolio(provider)
+
+  print("Portfolio research assistant")
+  print()
+  print(answer.summary)
+
+  if answer.risk_flags:
+    print()
+    print("Deterministic risk flags:")
+    for flag in answer.risk_flags:
+      print(f"- {flag}")
+
+  if answer.data_warnings:
+    print()
+    print("Data warnings:")
+    for warning in answer.data_warnings:
+      print(f"- {warning}")
+
+  print()
+  print(answer.disclaimer)
 
 def main() -> None:
 	parser = argparse.ArgumentParser(description="Read-only portfolio tools")
@@ -201,11 +225,12 @@ def main() -> None:
 		"command",
 		nargs="?",
     choices=(
-        "review",
-        "sync-portfolio",
-        "latest-portfolio",
-        "analyze-portfolio",
-		"reauthorize",
+      "review",
+      "sync-portfolio",
+      "latest-portfolio",
+      "analyze-portfolio",
+      "agent-portfolio",
+		  "reauthorize",
     ),
 		default="review",
 	)
@@ -219,6 +244,8 @@ def main() -> None:
 		run_analyze_portfolio()
 	elif args.command == "reauthorize":
 		run_reauthorize()
+	elif args.command =="agent-portfolio":
+		run_agent_portfolio_analysis()
 	else:
 		run_read_only_portfolio_review()
 

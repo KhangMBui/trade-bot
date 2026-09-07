@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Literal
-
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..models.portfolio import PortfolioSnapshot, Position
@@ -111,7 +109,7 @@ def _analyze_position(
   *,
   denominator: Decimal | None,
   max_single_position_weight: Decimal,
-) -> PortfolioAnalysis:
+) -> PositionAnalysis:
   symbol = position.symbol or "UNKNOWN"
   weight = _weight(position.market_value, denominator)
 

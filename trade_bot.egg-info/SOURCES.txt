@@ -2,6 +2,13 @@ pyproject.toml
 src/config.py
 src/etrade_authorize.py
 src/main.py
+src/agent/__init__.py
+src/agent/orchestrator.py
+src/agent/schemas.py
+src/agent/tools/__init__.py
+src/agent/tools/portfolio.py
+src/analytics/__init__.py
+src/analytics/portfolio.py
 src/api/account.py
 src/api/etrade_client.py
 src/api/portfolio.py
@@ -11,6 +18,8 @@ src/security/token_store.py
 src/services/portfolio_service.py
 src/storage/database.py
 src/storage/repositories.py
+src/tests/__init__.py
+src/tests/test_portfolio_analytics.py
 trade_bot.egg-info/PKG-INFO
 trade_bot.egg-info/SOURCES.txt
 trade_bot.egg-info/dependency_links.txt

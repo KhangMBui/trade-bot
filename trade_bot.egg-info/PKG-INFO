@@ -5,6 +5,7 @@ Summary: Read-only AI-assisted portfolio research agent
 Requires-Python: >=3.12
 Requires-Dist: fastapi>=0.115
 Requires-Dist: keyring>=25
+Requires-Dist: openai>=1.100
 Requires-Dist: pydantic>=2.7
 Requires-Dist: pydantic-settings>=2.2
 Requires-Dist: requests-oauthlib>=2.0
