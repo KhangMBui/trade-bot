@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trade-bot"
+version = "0.1.0"
+description = "Read-only AI-assisted portfolio research agent"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "keyring>=25",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.2",
+    "requests-oauthlib>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+include = ["src*"]

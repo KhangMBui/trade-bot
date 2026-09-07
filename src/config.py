@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     PROD_API_KEY: str
     PROD_SECRET: str
     ACCOUNT_ID_KEY: str
+    DATABASE_PATH: str = "data/trade_bot.sqlite3"
 
     # Tell Pydantic to read from a .env file
     model_config = SettingsConfigDict(env_file=ENV_FILE)
